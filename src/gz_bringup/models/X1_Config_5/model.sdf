@@ -4,6 +4,9 @@
         <enable_wind>1</enable_wind>
         <static>0</static>
         <link name="base_link">
+            <frame name="lidar_frame" attached_to="base_link">
+                <pose>0.0 0.0 0.0 0 0 0</pose>
+            </frame>
             <inertial>
                 <pose frame="">0.0 0.0 0.062 0 0 0</pose>
                 <mass>46.034</mass>
@@ -235,7 +238,10 @@
             <sensor name="imu_sensor" type="imu">
                 <always_on>1</always_on>
                 <update_rate>50</update_rate>
-                <imu>
+                <topic>imu</topic>
+                <frame_id>imu_link</frame_id>
+            </sensor>
+                <!-- <imu>
                     <enable_orientation>0</enable_orientation>
                     <angular_velocity>
                         <x>
@@ -308,7 +314,7 @@
                         </z>
                     </linear_acceleration>
                 </imu>
-            </sensor>
+            </sensor> -->
             <visual name="camera_front_right_visual">
                 <pose>0.43 -0.1 0.26 0 0 0</pose>
                 <geometry>
@@ -412,6 +418,36 @@
                         <stddev>0.007</stddev>
                     </noise>
                 </camera>
+            </sensor>
+            <!-- 2D LiDAR sensor -->
+            <sensor name="gpu_lidar" type="gpu_lidar">
+                <pose relative_to="lidar_frame">0 0 0.4 0 0 0</pose>
+                <topic>scan</topic>
+                <update_rate>10</update_rate>
+                <frame_id>lidar_link</frame_id>
+                <ray>
+                    <scan>
+                        <horizontal>
+                            <samples>640</samples>
+                            <resolution>1</resolution>
+                            <min_angle>-1.396263</min_angle>
+                            <max_angle>1.396263</max_angle>
+                        </horizontal>
+                        <vertical>
+                            <samples>1</samples>
+                            <resolution>0.01</resolution>
+                            <min_angle>0</min_angle>
+                            <max_angle>0</max_angle>
+                        </vertical>
+                    </scan>
+                    <range>
+                        <min>0.08</min>
+                        <max>10.0</max>
+                        <resolution>0.01</resolution>
+                    </range>
+                </ray>
+                <always_on>1</always_on>
+                <visualize>true</visualize>
             </sensor>
 
         </link>

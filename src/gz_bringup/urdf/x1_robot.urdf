@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+<robot name="x1_robot">
+  
+  <!-- Materials -->
+  <material name="black">
+    <color rgba="0.2 0.2 0.2 1.0"/>
+  </material>
+  <material name="red">
+    <color rgba="1.0 0.0 0.0 1.0"/>
+  </material>
+  <material name="green">
+    <color rgba="0.0 1.0 0.0 1.0"/>
+  </material>
+  <material name="blue">
+    <color rgba="0.0 0.0 1.0 0.8"/>
+  </material>
+
+  <!-- Base link (main chassis) -->
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0.12" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.9874 0.5709 0.05"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <visual name="chassis_bottom">
+      <origin xyz="0 0 0.046" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.80 0.5709 0.095"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <visual name="chassis_upper">
+      <origin xyz="0 0 0.185625" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.78992 0.5709 0.12375"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <visual name="top_plate">
+      <origin xyz="0.0812 0 0.245" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.32 0.41 0.09"/>
+      </geometry>
+      <material name="blue"/>
+    </visual>
+  </link>
+
+  <!-- LiDAR sensor -->
+  <link name="lidar_link">
+    <visual>
+      <geometry>
+        <cylinder radius="0.06" length="0.08"/>
+      </geometry>
+      <material name="red"/>
+    </visual>
+  </link>
+
+  <!-- LiDAR joint (based on SDF: relative_to="lidar_frame" 0 0 0.4) -->
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="lidar_link"/>
+    <origin xyz="0.0 0.0 0.4" rpy="0 0 0"/>
+  </joint>
+
+  <!-- IMU sensor -->
+  <link name="imu_link">
+    <visual>
+      <geometry>
+        <box size="0.03 0.03 0.015"/>
+      </geometry>
+      <material name="green"/>
+    </visual>
+  </link>
+
+  <!-- IMU joint (based on SDF inertial frame) -->
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0.0 0.0 0.062" rpy="0 0 0"/>
+  </joint>
+
+</robot>
