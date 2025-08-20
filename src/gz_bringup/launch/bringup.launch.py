@@ -58,6 +58,33 @@ def generate_launch_description():
         output='screen'
     )
     
+    # Camera bridges (right)
+    # bridge_cam_right_image = Node(
+    #     package='ros_gz_bridge',
+    #     executable='parameter_bridge',
+    #     arguments=['/world/warehouse_world/model/X1/link/base_link/sensor/camera_front_right/image@sensor_msgs/msg/Image@gz.msgs.Image'],
+    #     output='screen'
+    # )
+    # bridge_cam_right_info = Node(
+    #     package='ros_gz_bridge',
+    #     executable='parameter_bridge',
+    #     arguments=['/world/warehouse_world/model/X1/link/base_link/sensor/camera_front_right/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo'],
+    #     output='screen'
+    # )
+    # # Camera bridges (left)
+    # bridge_cam_left_image = Node(
+    #     package='ros_gz_bridge',
+    #     executable='parameter_bridge',
+    #     arguments=['/world/warehouse_world/model/X1/link/base_link/sensor/camera_front_left/image@sensor_msgs/msg/Image@gz.msgs.Image'],
+    #     output='screen'
+    # )
+    # bridge_cam_left_info = Node(
+    #     package='ros_gz_bridge',
+    #     executable='parameter_bridge',
+    #     arguments=['/world/warehouse_world/model/X1/link/base_link/sensor/camera_front_left/camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo'],
+    #     output='screen'
+    # )
+    
     # URDF 파일 읽기
     with open(urdf_file, 'r') as infp:
         robot_desc = infp.read()
@@ -109,6 +136,10 @@ def generate_launch_description():
         bridge_odom,
         bridge_scan,
         bridge_imu,
+        # bridge_cam_right_image,
+        # bridge_cam_right_info,
+        # bridge_cam_left_image,
+        # bridge_cam_left_info,
         robot_state_publisher,
         odom_to_tf_node,
         tf_gazebo_lidar,
