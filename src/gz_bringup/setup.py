@@ -11,6 +11,7 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/launch', ['launch/bringup.launch.py']),
+        ('lib/' + package_name, ['scripts/odom_to_tf.py']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

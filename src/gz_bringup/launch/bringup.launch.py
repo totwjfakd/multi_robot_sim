@@ -35,11 +35,12 @@ def generate_launch_description():
         output='screen'
     )
     
-    # ROS2-Gazebo 브리지: odometry 토픽 연결
+    # ROS2-Gazebo 브리지: odometry 토픽 연결 (TF 브로드캐스트 포함)
     bridge_odom = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
         arguments=['/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry'],
+        parameters=[{'qos_overrides./odom.subscription.reliability': 'reliable'}],
         output='screen'
     )
     
@@ -70,11 +71,12 @@ def generate_launch_description():
         parameters=[{'robot_description': robot_desc}],
     )
     
-    # TF Static Transform Publisher (map -> base_link 직접 연결)
-    tf_map_base = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        arguments=['0', '0', '0', '0', '0', '0', 'map', 'base_link']
+    # Odometry 토픽을 TF로 변환하는 Python 노드
+    odom_to_tf_node = Node(
+        package='gz_bringup',
+        executable='odom_to_tf.py',
+        name='odom_to_tf',
+        output='screen'
     )
     
     # Gazebo frame을 ROS2 표준 frame으로 연결
@@ -108,7 +110,7 @@ def generate_launch_description():
         bridge_scan,
         bridge_imu,
         robot_state_publisher,
-        tf_map_base,
+        odom_to_tf_node,
         tf_gazebo_lidar,
         tf_gazebo_imu,
         rviz
