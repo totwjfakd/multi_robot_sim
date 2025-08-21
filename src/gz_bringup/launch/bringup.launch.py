@@ -128,6 +128,14 @@ def generate_launch_description():
         arguments=['-d', rviz_config_file],
         output='screen'
     )
+    clock_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        # 월드명에 맞게 수정: /world/<world_name>/clock
+        arguments=['/world/warehouse_world/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'],
+        remappings=[('/world/warehouse_world/clock', '/clock')],
+        output='screen'
+    )
     
     return LaunchDescription([
         model_path,
@@ -144,5 +152,6 @@ def generate_launch_description():
         odom_to_tf_node,
         tf_gazebo_lidar,
         tf_gazebo_imu,
-        rviz
+        rviz,
+        clock_bridge
     ])
