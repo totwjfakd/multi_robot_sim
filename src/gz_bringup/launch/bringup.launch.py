@@ -1,6 +1,7 @@
 import os
 from launch import LaunchDescription
-from launch.actions import ExecuteProcess, SetEnvironmentVariable
+from launch.actions import ExecuteProcess, SetEnvironmentVariable, IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration
 from ament_index_python.packages import get_package_share_directory
@@ -20,11 +21,19 @@ def generate_launch_description():
         name='GZ_SIM_RESOURCE_PATH',
         value='/home/hanbaek/multirobot_sim/src/gz_bringup/models'
     )
+    model_path_ign = SetEnvironmentVariable(
+        name='IGN_GAZEBO_RESOURCE_PATH',
+        value='/home/hanbaek/multirobot_sim/src/gz_bringup/models'
+    )
     
-    # Gazebo 실행
-    gazebo = ExecuteProcess(
-        cmd=['ign', 'gazebo', world_file, '-v', '4'],
-        output='screen'
+    # Gazebo 실행 (ros_gz_sim 표준 런치 포함)
+    gz_sim_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')
+        ),
+        launch_arguments={
+            'gz_args': f'-r -v 4 {world_file}'
+        }.items()
     )
     
     # ROS2-Gazebo 브리지: cmd_vel 토픽 연결
@@ -131,15 +140,16 @@ def generate_launch_description():
     clock_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
-        # 월드명에 맞게 수정: /world/<world_name>/clock
-        arguments=['/world/warehouse_world/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'],
+        arguments=['/world/warehouse_world/clock@rosgraph_msgs/msg/Clock@gz.msgs.Clock'],
         remappings=[('/world/warehouse_world/clock', '/clock')],
         output='screen'
     )
+
     
     return LaunchDescription([
         model_path,
-        gazebo,
+        model_path_ign,
+        gz_sim_launch,
         bridge_cmd_vel,
         bridge_odom,
         bridge_scan,
