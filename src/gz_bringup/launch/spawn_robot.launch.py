@@ -39,6 +39,21 @@ def launch_setup(context, *args, **kwargs):
     ros_odom = 'odom'
     ros_cmd  = 'cmd_vel'
 
+    # Nav2 파라미터 파일(<NS> 치환 포함) 준비: AMCL 등에서 공통 사용
+    params_file_subst = ReplaceString(
+        source_file=LaunchConfiguration('params_file'),
+        replacements={'<NS>': name}
+    )
+    configured_params = ParameterFile(
+        RewrittenYaml(
+            source_file=params_file_subst,
+            root_key=name,
+            param_rewrites={},
+            convert_types=True
+        ),
+        allow_substs=True
+    )
+
     return [
         # 1) 스포너 (SDF로 로봇 생성)
         Node(
@@ -123,14 +138,7 @@ def launch_setup(context, *args, **kwargs):
         ),
         Node(
             package='nav2_amcl', executable='amcl', name='amcl',
-            parameters=[{
-                'use_sim_time': True,
-                'tf_broadcast': True,
-                'global_frame_id': 'map',
-                'odom_frame_id': f'{name}/odom',
-                'base_frame_id': f'{name}/base_link',
-                'scan_topic': 'scan',
-            }],
+            parameters=[configured_params],
             remappings=[('map', '/map')],
             output='screen'
         ),
@@ -170,9 +178,7 @@ def generate_launch_description():
         DeclareLaunchArgument('z', default_value='0.02'),
         DeclareLaunchArgument('yaw', default_value='0.0'),
         # Nav2 실행 옵션 및 파라미터 (옵션)
-        # DeclareLaunchArgument('start_nav', default_value='true'),
-        # DeclareLaunchArgument('params_file', default_value='/home/hanbaek/multirobot_sim/src/nav2_launcher/params/robot_config.yaml'),
-        # DeclareLaunchArgument('start_localization', default_value='false'),
+        DeclareLaunchArgument('params_file', default_value='/home/hanbaek/multirobot_sim/src/nav2_launcher/params/robot_config.yaml'),
 
         # 링크/센서 이름(SDF에 맞게)
         DeclareLaunchArgument('lidar_link',   default_value='base_link'),
