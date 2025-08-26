@@ -53,7 +53,32 @@ def launch_setup(context, *args, **kwargs):
         ),
         allow_substs=True
     )
+    nav2_bringup_launch = os.path.join(
+        get_package_share_directory('nav2_launcher'),
+        'launch', 'navigation_launch_multi.py'
+    )
 
+    # (중요) 여기선 'root_key'를 하위에서 다시 감싸므로
+    # '<NS>' 치환만 적용된 원본 경로를 넘기면 충분합니다.
+    nav2_params_for_include = ReplaceString(
+        source_file=LaunchConfiguration('params_file'),
+        replacements={'<NS>': name}
+    )
+
+    nav2_include = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(nav2_bringup_launch),
+        launch_arguments={
+            'namespace': name,                 # 로봇 네임스페이스
+            'use_sim_time': 'true',
+            'autostart': 'true',
+            'params_file': nav2_params_for_include,  # bringup 내부에서 root_key=namespace로 감쌈
+            'use_composition': 'False',
+            'container_name': 'nav2_container',
+            'use_respawn': 'False',
+            'log_level': 'info',
+        }.items(),
+        condition=IfCondition(LaunchConfiguration('start_nav'))
+    )
     return [
         # 1) 스포너 (SDF로 로봇 생성)
         Node(
@@ -150,6 +175,7 @@ def launch_setup(context, *args, **kwargs):
                 'node_names': ['amcl']
             }]
         ),
+        nav2_include,
     ]
         # # 5) (옵션) 로봇 네임스페이스로 Nav2 포함 실행 (robot_nav.launch.py)
         # IncludeLaunchDescription(
@@ -179,7 +205,7 @@ def generate_launch_description():
         DeclareLaunchArgument('yaw', default_value='0.0'),
         # Nav2 실행 옵션 및 파라미터 (옵션)
         DeclareLaunchArgument('params_file', default_value='/home/hanbaek/multirobot_sim/src/nav2_launcher/params/robot_config.yaml'),
-
+        DeclareLaunchArgument('start_nav', default_value='true'),  # ← Nav2 bringup 켜기/끄기 스위치
         # 링크/센서 이름(SDF에 맞게)
         DeclareLaunchArgument('lidar_link',   default_value='base_link'),
         DeclareLaunchArgument('lidar_sensor', default_value='gpu_lidar'),
