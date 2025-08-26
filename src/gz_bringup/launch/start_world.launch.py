@@ -21,6 +21,27 @@ def generate_launch_description():
             ),
             launch_arguments={'gz_args': f'-r -v 4 {world_file}'}.items(),
         ),
+        # Map Server (전역 1개)
+        Node(
+            package='nav2_map_server',
+            executable='map_server',
+            name='map_server',
+            output='screen',
+            parameters=[{'use_sim_time': True, 'yaml_filename': '/home/hanbaek/multirobot_sim/maps/v1/v1_map.yaml'}],
+        ),
+        # Lifecycle Manager for map_server (auto configure/activate)
+        Node(
+            package='nav2_lifecycle_manager',
+            executable='lifecycle_manager',
+            name='lifecycle_manager_map',
+            output='screen',
+            parameters=[{
+                'use_sim_time': True,
+                'autostart': True,
+                'bond_timeout': 2.0,
+                'node_names': ['map_server']
+            }],
+        ),
         Node(
             package='ros_gz_bridge',
             executable='parameter_bridge',

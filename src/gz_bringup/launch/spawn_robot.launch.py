@@ -1,8 +1,15 @@
 # gz_bringup/launch/spawn_robot.launch.py
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, GroupAction, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, GroupAction, OpaqueFunction, IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
+from launch.conditions import IfCondition
 from launch_ros.actions import Node, PushRosNamespace
+from ament_index_python.packages import get_package_share_directory
+
+from nav2_common.launch import RewrittenYaml, ReplaceString
+from launch_ros.descriptions import ParameterFile
+import os
 
 def launch_setup(context, *args, **kwargs):
     world = LaunchConfiguration('world_name').perform(context)
@@ -26,11 +33,11 @@ def launch_setup(context, *args, **kwargs):
     # odom은 플러그인에 따라 경로가 다를 수 있음. 보편적으로 아래 둘 중 하나.
     gz_odom = f'/model/{name}/odometry'   # 필요시 '/world/{world}/model/{name}/odometry'
 
-    # ROS 네임스페이스 토픽
-    ros_scan = f'/{name}/scan'
-    ros_imu  = f'/{name}/imu'
-    ros_odom = f'/{name}/odom'
-    ros_cmd  = f'/{name}/cmd_vel'
+    # ROS 네임스페이스 토픽 (상대 경로로 정의하여 PushRosNamespace에 의해 /<ns>/... 로 적용)
+    ros_scan = 'scan'
+    ros_imu  = 'imu'
+    ros_odom = 'odom'
+    ros_cmd  = 'cmd_vel'
 
     return [
         # 1) 스포너 (SDF로 로봇 생성)
@@ -102,7 +109,56 @@ def launch_setup(context, *args, **kwargs):
                          'odom_frame': f'{name}/odom',
                          'base_frame': f'{name}/base_link'}],
             output='screen'),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            arguments=['0','0','0','0','0','0', f'{name}/lidar_link', f'{name}/base_link/gpu_lidar'],
+            output='screen'
+        ),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            arguments=['0','0','0','0','0','0', f'{name}/imu_link', f'{name}/base_link/imu_sensor'],
+            output='screen'
+        ),
+        Node(
+            package='nav2_amcl', executable='amcl', name='amcl',
+            parameters=[{
+                'use_sim_time': True,
+                'tf_broadcast': True,
+                'global_frame_id': 'map',
+                'odom_frame_id': f'{name}/odom',
+                'base_frame_id': f'{name}/base_link',
+                'scan_topic': 'scan',
+            }],
+            remappings=[('map', '/map')],
+            output='screen'
+        ),
+        Node(
+            package='nav2_lifecycle_manager', executable='lifecycle_manager',
+            name='lifecycle_manager_localization', output='screen',
+            parameters=[{
+                'use_sim_time': True, 'autostart': True, 'bond_timeout': 0.0,
+                'node_names': ['amcl']
+            }]
+        ),
     ]
+        # # 5) (옵션) 로봇 네임스페이스로 Nav2 포함 실행 (robot_nav.launch.py)
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(
+        #         os.path.join(get_package_share_directory('nav2_launcher'), 'launch', 'robot_nav.launch.py')
+        #     ),
+        #     launch_arguments={
+        #         'namespace': LaunchConfiguration('robot_name'),
+        #         'params': LaunchConfiguration('params_file'),
+        #         'use_sim_time': 'true',
+        #         'autostart': 'true',
+        #         'start_localization': LaunchConfiguration('start_localization'),
+        #     }.items(),
+        #     condition=IfCondition(LaunchConfiguration('start_nav')),
+        # ),
+
+
 
 def generate_launch_description():
     return LaunchDescription([
@@ -113,6 +169,10 @@ def generate_launch_description():
         DeclareLaunchArgument('y', default_value='0.0'),
         DeclareLaunchArgument('z', default_value='0.02'),
         DeclareLaunchArgument('yaw', default_value='0.0'),
+        # Nav2 실행 옵션 및 파라미터 (옵션)
+        # DeclareLaunchArgument('start_nav', default_value='true'),
+        # DeclareLaunchArgument('params_file', default_value='/home/hanbaek/multirobot_sim/src/nav2_launcher/params/robot_config.yaml'),
+        # DeclareLaunchArgument('start_localization', default_value='false'),
 
         # 링크/센서 이름(SDF에 맞게)
         DeclareLaunchArgument('lidar_link',   default_value='base_link'),

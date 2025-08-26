@@ -1,0 +1,4 @@
+/**:
+  ros__parameters:
+    use_sim_time: True
+    yaml_filename: "/home/hanbaek/multirobot_sim/maps/v1/v1_map.yaml"
