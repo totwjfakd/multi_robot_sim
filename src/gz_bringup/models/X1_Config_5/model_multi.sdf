@@ -421,15 +421,16 @@
             <!-- 2D LiDAR sensor -->
             <sensor name="gpu_lidar" type="gpu_lidar">
                 <pose relative_to="lidar_frame">0 0 0.4 0 0 0</pose>
-                <update_rate>10</update_rate>
+                <update_rate>15</update_rate>
                 <frame_id>lidar_link</frame_id>
                 <ray>
                     <scan>
                         <horizontal>
-                            <samples>640</samples>
+                            <!-- 360도 시야각, 해상도 0.35도 (≈1024 샘플) -->
+                            <samples>1024</samples>
                             <resolution>1</resolution>
-                            <min_angle>-1.396263</min_angle>
-                            <max_angle>1.396263</max_angle>
+                            <min_angle>-3.14159</min_angle>
+                            <max_angle>3.14159</max_angle>
                         </horizontal>
                         <vertical>
                             <samples>1</samples>
@@ -443,6 +444,12 @@
                         <max>10.0</max>
                         <resolution>0.01</resolution>
                     </range>
+                    <!-- AMCL을 위한 약간의 Gaussian 노이즈 추가 -->
+                    <noise>
+                        <type>gaussian</type>
+                        <mean>0.0</mean>
+                        <stddev>0.01</stddev> <!-- 1cm 정도 오차 -->
+                    </noise>
                 </ray>
                 <always_on>1</always_on>
                 <visualize>true</visualize>
