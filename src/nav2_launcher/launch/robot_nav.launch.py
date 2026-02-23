@@ -5,6 +5,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from ament_index_python.packages import get_package_share_directory
 from nav2_common.launch import ReplaceString
+import os
 
 
 def generate_launch_description():
@@ -20,6 +21,7 @@ def generate_launch_description():
 
     nav2_bringup_dir = get_package_share_directory('nav2_launcher')
     launch_dir       = nav2_bringup_dir + '/launch'
+    default_params   = os.path.join(nav2_bringup_dir, 'params', 'robot_config.yaml')
 
     # <NS> 플레이스홀더를 실제 네임스페이스로 치환한 파라미터 파일 경로
     params_preprocessed = ReplaceString(
@@ -30,7 +32,7 @@ def generate_launch_description():
     return LaunchDescription([
         # 공통 인자
         DeclareLaunchArgument('namespace', default_value='robot_1'),
-        DeclareLaunchArgument('params',    default_value='/home/hanbaek/multirobot_sim/src/nav2_launcher/params/robot_config.yaml'),
+        DeclareLaunchArgument('params',    default_value=default_params),
         DeclareLaunchArgument('map',       default_value=''),  # 빈 값이면 글로벌 map_server 사용 가정
         DeclareLaunchArgument('use_sim_time',   default_value='true'),
         DeclareLaunchArgument('autostart',      default_value='true'),

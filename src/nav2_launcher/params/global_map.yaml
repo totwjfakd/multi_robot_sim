@@ -1,7 +1,7 @@
 map_server:
   ros__parameters:
     use_sim_time: True
-    yaml_filename: "/home/hanbaek/multirobot_sim/maps/v1/v1_map.yaml"   # <- 실제 맵 YAML 경로로 교체
+    yaml_filename: "/home/csilab/multi_robot_sim/maps/v1/v1_map.yaml"   # <- 실제 맵 YAML 경로로 교체
 
 # (선택) 맵 저장 서버
 map_saver_server:

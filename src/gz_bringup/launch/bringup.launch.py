@@ -7,23 +7,24 @@ from launch.substitutions import LaunchConfiguration
 from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
-    # 패키지 경로 가져오기
+    # 패키지 share 디렉토리에서 경로 참조
     pkg_share = get_package_share_directory('gz_bringup')
-    
+
     # world 파일 경로
-    world_file = '/home/hanbaek/multirobot_sim/src/gz_bringup/worlds/warehouse.world'
-    
-    # URDF 파일 경로 (절대 경로 사용)
-    urdf_file = '/home/hanbaek/multirobot_sim/src/gz_bringup/urdf/x1_robot.urdf'
-    
+    world_file = os.path.join(pkg_share, 'worlds', 'warehouse.world')
+
+    # URDF 파일 경로
+    urdf_file = os.path.join(pkg_share, 'urdf', 'x1_robot.urdf')
+
     # 모델 경로 환경변수 설정
+    models_path = os.path.join(pkg_share, 'models')
     model_path = SetEnvironmentVariable(
         name='GZ_SIM_RESOURCE_PATH',
-        value='/home/hanbaek/multirobot_sim/src/gz_bringup/models'
+        value=models_path
     )
     model_path_ign = SetEnvironmentVariable(
         name='IGN_GAZEBO_RESOURCE_PATH',
-        value='/home/hanbaek/multirobot_sim/src/gz_bringup/models'
+        value=models_path
     )
     
     # Gazebo 실행 (ros_gz_sim 표준 런치 포함)
@@ -129,7 +130,7 @@ def generate_launch_description():
     )
     
     # RVIZ2 실행
-    rviz_config_file = '/home/hanbaek/multirobot_sim/visualization.rviz'
+    rviz_config_file = os.path.join(pkg_share, 'rviz', 'visualization.rviz')
     rviz = Node(
         package='rviz2',
         executable='rviz2',

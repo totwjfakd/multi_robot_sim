@@ -7,8 +7,10 @@ from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
-    world_file = '/home/hanbaek/multirobot_sim/src/gz_bringup/worlds/warehouse_only_map.world'
-    res_path = '/home/hanbaek/multirobot_sim/src/gz_bringup/models'
+    pkg_share = get_package_share_directory('gz_bringup')
+
+    world_file = os.path.join(pkg_share, 'worlds', 'warehouse_only_map.world')
+    res_path = os.path.join(pkg_share, 'models')
 
     world = 'warehouse_world'  
 
@@ -28,7 +30,7 @@ def generate_launch_description():
             executable='map_server',
             name='map_server',
             output='screen',
-            parameters=[{'use_sim_time': True, 'yaml_filename': '/home/hanbaek/multirobot_sim/maps/v1/v1_map.yaml'}],
+            parameters=[{'use_sim_time': True, 'yaml_filename': os.path.join(pkg_share, 'maps', 'v1', 'v1_map.yaml')}],
         ),
         # Lifecycle Manager for map_server (auto configure/activate)
         Node(

@@ -11,12 +11,15 @@ from nav2_common.launch import RewrittenYaml, ReplaceString
 from launch_ros.descriptions import ParameterFile
 import os
 
+_GZ_SHARE = get_package_share_directory('gz_bringup')
+_NAV2_SHARE = get_package_share_directory('nav2_launcher')
+
 def launch_setup(context, *args, **kwargs):
     world = LaunchConfiguration('world_name').perform(context)
     name  = LaunchConfiguration('robot_name').perform(context)
-    
+
     # URDF 파일 읽기
-    urdf_file = '/home/hanbaek/multirobot_sim/src/gz_bringup/urdf/x1_robot.urdf'
+    urdf_file = os.path.join(_GZ_SHARE, 'urdf', 'x1_robot.urdf')
     with open(urdf_file, 'r') as f:
         robot_desc = f.read()
 
@@ -198,13 +201,13 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('world_name', default_value='warehouse_world'),
         DeclareLaunchArgument('robot_name', default_value='robot_1'),
-        DeclareLaunchArgument('sdf_file',   default_value='/home/hanbaek/multirobot_sim/src/gz_bringup/models/X1_Config_5/model_multi.sdf'),
+        DeclareLaunchArgument('sdf_file',   default_value=os.path.join(_GZ_SHARE, 'models', 'X1_Config_5', 'model_multi.sdf')),
         DeclareLaunchArgument('x', default_value='0.0'),
         DeclareLaunchArgument('y', default_value='0.0'),
         DeclareLaunchArgument('z', default_value='0.02'),
         DeclareLaunchArgument('yaw', default_value='0.0'),
         # Nav2 실행 옵션 및 파라미터 (옵션)
-        DeclareLaunchArgument('params_file', default_value='/home/hanbaek/multirobot_sim/src/nav2_launcher/params/robot_config.yaml'),
+        DeclareLaunchArgument('params_file', default_value=os.path.join(_NAV2_SHARE, 'params', 'robot_config.yaml')),
         DeclareLaunchArgument('start_nav', default_value='true'),  # ← Nav2 bringup 켜기/끄기 스위치
         # 링크/센서 이름(SDF에 맞게)
         DeclareLaunchArgument('lidar_link',   default_value='base_link'),
