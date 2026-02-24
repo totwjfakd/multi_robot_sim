@@ -3,7 +3,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, OpaqueFunction, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch_ros.actions import Node, PushRosNamespace
 from ament_index_python.packages import get_package_share_directory
 
@@ -26,11 +26,15 @@ def launch_setup(context, *args, **kwargs):
     # 센서 링크/센서 이름 (SDF에 맞춰 수정)
     lidar_link  = LaunchConfiguration('lidar_link').perform(context)
     lidar_name  = LaunchConfiguration('lidar_sensor').perform(context)
+    rear_lidar_link = LaunchConfiguration('rear_lidar_link').perform(context)
+    rear_lidar_name = LaunchConfiguration('rear_lidar_sensor').perform(context)
     imu_link    = LaunchConfiguration('imu_link').perform(context)
     imu_name    = LaunchConfiguration('imu_sensor').perform(context)
+    use_dual_lidar = LaunchConfiguration('use_dual_lidar')
 
     # GZ 토픽 경로 구성
-    gz_scan = f'/world/{world}/model/{name}/link/{lidar_link}/sensor/{lidar_name}/scan'
+    gz_scan_front = f'/world/{world}/model/{name}/link/{lidar_link}/sensor/{lidar_name}/scan'
+    gz_scan_rear = f'/world/{world}/model/{name}/link/{rear_lidar_link}/sensor/{rear_lidar_name}/scan'
     gz_imu  = f'/world/{world}/model/{name}/link/{imu_link}/sensor/{imu_name}/imu'
     
     # odom은 플러그인에 따라 경로가 다를 수 있음. 보편적으로 아래 둘 중 하나.
@@ -38,6 +42,8 @@ def launch_setup(context, *args, **kwargs):
 
     # ROS 네임스페이스 토픽 (상대 경로로 정의하여 PushRosNamespace에 의해 /<ns>/... 로 적용)
     ros_scan = 'scan'
+    ros_scan_front = 'scan_front'
+    ros_scan_rear = 'scan_rear'
     ros_imu  = 'imu'
     ros_odom = 'odom'
     ros_cmd  = 'cmd_vel'
@@ -100,13 +106,52 @@ def launch_setup(context, *args, **kwargs):
             output='screen'),
 
         # 2) 브릿지들
-        # LiDAR GZ->ROS
+        # LiDAR GZ->ROS (single mode: front scan directly to /scan)
         Node(
             package='ros_gz_bridge',
             executable='parameter_bridge',
             name=f'{name}_bridge_scan',
-            arguments=[f'{gz_scan}@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan'],
-            remappings=[(gz_scan, ros_scan)],
+            arguments=[f'{gz_scan_front}@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan'],
+            remappings=[(gz_scan_front, ros_scan)],
+            condition=UnlessCondition(use_dual_lidar),
+            output='screen'),
+        # LiDAR GZ->ROS (dual mode: front/rear -> scan_front/scan_rear)
+        Node(
+            package='ros_gz_bridge',
+            executable='parameter_bridge',
+            name=f'{name}_bridge_scan_front',
+            arguments=[f'{gz_scan_front}@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan'],
+            remappings=[(gz_scan_front, ros_scan_front)],
+            condition=IfCondition(use_dual_lidar),
+            output='screen'),
+        Node(
+            package='ros_gz_bridge',
+            executable='parameter_bridge',
+            name=f'{name}_bridge_scan_rear',
+            arguments=[f'{gz_scan_rear}@sensor_msgs/msg/LaserScan@gz.msgs.LaserScan'],
+            remappings=[(gz_scan_rear, ros_scan_rear)],
+            condition=IfCondition(use_dual_lidar),
+            output='screen'),
+        # Dual 180 LiDAR merge -> /scan
+        Node(
+            package='gz_bringup',
+            executable='scan_merger.py',
+            name='scan_merger',
+            parameters=[{
+                'front_topic': ros_scan_front,
+                'rear_topic': ros_scan_rear,
+                'output_topic': ros_scan,
+                'output_frame_id': f'{name}/base_link',
+                'front_x': float(LaunchConfiguration('front_lidar_x').perform(context)),
+                'front_y': float(LaunchConfiguration('front_lidar_y').perform(context)),
+                'front_yaw': float(LaunchConfiguration('front_lidar_yaw').perform(context)),
+                'rear_x': float(LaunchConfiguration('rear_lidar_x').perform(context)),
+                'rear_y': float(LaunchConfiguration('rear_lidar_y').perform(context)),
+                'rear_yaw': float(LaunchConfiguration('rear_lidar_yaw').perform(context)),
+                'publish_rate_hz': 20.0,
+                'output_samples': 720,
+            }],
+            condition=IfCondition(use_dual_lidar),
             output='screen'),
         # IMU GZ->ROS
         Node(
@@ -161,6 +206,12 @@ def launch_setup(context, *args, **kwargs):
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',
+            arguments=['0','0','0','0','0','0', f'{name}/lidar_rear_link', f'{name}/base_link/gpu_lidar_rear'],
+            output='screen'
+        ),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
             arguments=['0','0','0','0','0','0', f'{name}/imu_link', f'{name}/base_link/imu_sensor'],
             output='screen'
         ),
@@ -209,11 +260,20 @@ def generate_launch_description():
         # Nav2 실행 옵션 및 파라미터 (옵션)
         DeclareLaunchArgument('params_file', default_value=os.path.join(_NAV2_SHARE, 'params', 'robot_config.yaml')),
         DeclareLaunchArgument('start_nav', default_value='true'),  # ← Nav2 bringup 켜기/끄기 스위치
+        DeclareLaunchArgument('use_dual_lidar', default_value='true'),
         # 링크/센서 이름(SDF에 맞게)
         DeclareLaunchArgument('lidar_link',   default_value='base_link'),
         DeclareLaunchArgument('lidar_sensor', default_value='gpu_lidar'),
+        DeclareLaunchArgument('rear_lidar_link', default_value='base_link'),
+        DeclareLaunchArgument('rear_lidar_sensor', default_value='gpu_lidar_rear'),
         DeclareLaunchArgument('imu_link',     default_value='base_link'),
         DeclareLaunchArgument('imu_sensor',   default_value='imu_sensor'),
+        DeclareLaunchArgument('front_lidar_x', default_value='0.5'),
+        DeclareLaunchArgument('front_lidar_y', default_value='0.0'),
+        DeclareLaunchArgument('front_lidar_yaw', default_value='0.0'),
+        DeclareLaunchArgument('rear_lidar_x', default_value='-0.5'),
+        DeclareLaunchArgument('rear_lidar_y', default_value='0.0'),
+        DeclareLaunchArgument('rear_lidar_yaw', default_value='3.14159'),
 
         # URDF를 RSP에 넣을 내용(선택: 파일 읽어서 넘겨도 됨)
         DeclareLaunchArgument('robot_description', default_value=''),

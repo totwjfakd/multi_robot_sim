@@ -26,6 +26,7 @@ data_files = [
     (pkg_share + '/launch', glob('launch/*.py')),
     ('lib/' + package_name, ['scripts/odom_to_tf.py']),
     ('lib/' + package_name, ['scripts/gz_spawner.py']),
+    ('lib/' + package_name, ['scripts/scan_merger.py']),
     # 리소스 파일
     (pkg_share + '/worlds', glob('worlds/*')),
     (pkg_share + '/urdf', glob('urdf/*')),

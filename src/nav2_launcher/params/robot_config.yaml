@@ -306,7 +306,7 @@ behavior_server:
       plugin: "nav2_behaviors/AssistedTeleop"
     global_frame: "<NS>/odom"
     robot_base_frame: "<NS>/base_link"
-    transform_tolerance: 0.1
+    transform_tolerance: 0.2
     use_sim_time: true
     simulate_ahead_time: 2.0
     max_rotational_vel: 1.0
