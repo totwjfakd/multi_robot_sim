@@ -4,11 +4,11 @@ from launch.actions import DeclareLaunchArgument, GroupAction, OpaqueFunction, I
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch.conditions import IfCondition, UnlessCondition
-from launch_ros.actions import Node, PushRosNamespace
+from launch_ros.actions import LoadComposableNodes, Node, PushRosNamespace
 from ament_index_python.packages import get_package_share_directory
 
 from nav2_common.launch import RewrittenYaml, ReplaceString
-from launch_ros.descriptions import ParameterFile
+from launch_ros.descriptions import ComposableNode, ParameterFile
 import os
 
 _GZ_SHARE = get_package_share_directory('gz_bringup')
@@ -31,6 +31,12 @@ def launch_setup(context, *args, **kwargs):
     imu_link    = LaunchConfiguration('imu_link').perform(context)
     imu_name    = LaunchConfiguration('imu_sensor').perform(context)
     use_dual_lidar = LaunchConfiguration('use_dual_lidar')
+    use_composition = LaunchConfiguration('use_composition')
+    container_name = LaunchConfiguration('container_name')
+    use_respawn = LaunchConfiguration('use_respawn')
+    log_level = LaunchConfiguration('log_level')
+    container_name_value = container_name.perform(context)
+    container_name_full = f'/{name}/{container_name_value}'
 
     # GZ 토픽 경로 구성
     gz_scan_front = f'/world/{world}/model/{name}/link/{lidar_link}/sensor/{lidar_name}/scan'
@@ -81,10 +87,11 @@ def launch_setup(context, *args, **kwargs):
             'use_sim_time': 'true',
             'autostart': 'true',
             'params_file': nav2_params_for_include,  # bringup 내부에서 root_key=namespace로 감쌈
-            'use_composition': 'False',
-            'container_name': 'nav2_container',
-            'use_respawn': 'False',
-            'log_level': 'info',
+            'use_composition': use_composition,
+            'container_name': container_name,
+            'container_name_full': container_name_full,
+            'use_respawn': use_respawn,
+            'log_level': log_level,
         }.items(),
         condition=IfCondition(LaunchConfiguration('start_nav'))
     )
@@ -216,9 +223,19 @@ def launch_setup(context, *args, **kwargs):
             output='screen'
         ),
         Node(
+            condition=IfCondition(use_composition),
+            package='rclcpp_components',
+            executable='component_container_isolated',
+            name=container_name_value,
+            parameters=[configured_params, {'autostart': True}],
+            arguments=['--ros-args', '--log-level', log_level],
+            output='screen'
+        ),
+        Node(
             package='nav2_amcl', executable='amcl', name='amcl',
             parameters=[configured_params],
             remappings=[('map', '/map')],
+            condition=UnlessCondition(use_composition),
             output='screen'
         ),
         Node(
@@ -227,7 +244,32 @@ def launch_setup(context, *args, **kwargs):
             parameters=[{
                 'use_sim_time': True, 'autostart': True, 'bond_timeout': 0.0,
                 'node_names': ['amcl']
-            }]
+            }],
+            condition=UnlessCondition(use_composition)
+        ),
+        LoadComposableNodes(
+            condition=IfCondition(use_composition),
+            target_container=container_name_full,
+            composable_node_descriptions=[
+                ComposableNode(
+                    package='nav2_amcl',
+                    plugin='nav2_amcl::AmclNode',
+                    name='amcl',
+                    parameters=[configured_params],
+                    remappings=[('map', '/map')],
+                ),
+                ComposableNode(
+                    package='nav2_lifecycle_manager',
+                    plugin='nav2_lifecycle_manager::LifecycleManager',
+                    name='lifecycle_manager_localization',
+                    parameters=[{
+                        'use_sim_time': True,
+                        'autostart': True,
+                        'bond_timeout': 0.0,
+                        'node_names': ['amcl'],
+                    }],
+                ),
+            ]
         ),
         nav2_include,
     ]
@@ -260,6 +302,10 @@ def generate_launch_description():
         # Nav2 실행 옵션 및 파라미터 (옵션)
         DeclareLaunchArgument('params_file', default_value=os.path.join(_NAV2_SHARE, 'params', 'robot_config.yaml')),
         DeclareLaunchArgument('start_nav', default_value='true'),  # ← Nav2 bringup 켜기/끄기 스위치
+        DeclareLaunchArgument('use_composition', default_value='False'),
+        DeclareLaunchArgument('container_name', default_value='nav2_container'),
+        DeclareLaunchArgument('use_respawn', default_value='False'),
+        DeclareLaunchArgument('log_level', default_value='info'),
         DeclareLaunchArgument('use_dual_lidar', default_value='true'),
         # 링크/센서 이름(SDF에 맞게)
         DeclareLaunchArgument('lidar_link',   default_value='base_link'),
