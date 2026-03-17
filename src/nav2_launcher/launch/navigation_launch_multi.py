@@ -36,7 +36,7 @@ def generate_launch_description():
     params_file = LaunchConfiguration('params_file')
     use_composition = LaunchConfiguration('use_composition')
     container_name = LaunchConfiguration('container_name')
-    container_name_full = (namespace, '/', container_name)
+    container_name_full = LaunchConfiguration('container_name_full')
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
 
@@ -99,6 +99,11 @@ def generate_launch_description():
     declare_container_name_cmd = DeclareLaunchArgument(
         'container_name', default_value='nav2_container',
         description='the name of conatiner that nodes will load in if use composition')
+
+    declare_container_name_full_cmd = DeclareLaunchArgument(
+        'container_name_full',
+        default_value=[namespace, '/', container_name],
+        description='fully qualified container name for composed node loading')
 
     declare_use_respawn_cmd = DeclareLaunchArgument(
         'use_respawn', default_value='False',
@@ -263,6 +268,7 @@ def generate_launch_description():
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_use_composition_cmd)
     ld.add_action(declare_container_name_cmd)
+    ld.add_action(declare_container_name_full_cmd)
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_log_level_cmd)
     # Add the actions to launch all of the navigation nodes
