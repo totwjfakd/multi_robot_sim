@@ -1,0 +1,59 @@
+# slam_toolbox parameters for GT-pose-based mapping
+# Robot: slam_1  (gt_pose_bridge provides map→slam_1/odom→slam_1/base_link)
+# slam_toolbox uses GT TF — no pose estimation from scan matching
+
+slam_toolbox:
+  ros__parameters:
+    use_sim_time: true
+
+    # TF frames (must match gt_pose_bridge output for slam_1)
+    odom_frame:     slam_1/odom
+    map_frame:      map
+    base_frame:     slam_1/base_link
+    scan_topic:     /slam_1/scan
+    # scan_merger가 slam_1/base_link 프레임으로 이미 변환해서 출력
+    # → slam_toolbox가 항상 찾을 수 있는 TF (identity lookup)
+
+    # Mapping mode
+    mode: mapping
+
+    # Solver
+    solver_plugin:            solver_plugins::CeresSolver
+    ceres_linear_solver:      SPARSE_NORMAL_CHOLESKY
+    ceres_preconditioner:     SCHUR_JACOBI
+    ceres_trust_strategy:     LEVENBERG_MARQUARDT
+    ceres_dogleg_type:        TRADITIONAL_DOGLEG
+    ceres_loss_function:      None
+
+    # Map resolution (match existing map)
+    resolution: 0.05
+    map_update_interval: 3.0
+
+    # Scan processing
+    throttle_scans:                     1
+    transform_publish_period:           0.02
+    transform_timeout:                  1.0
+    tf_buffer_duration:                 60.0
+    minimum_time_interval:              0.3
+    minimum_travel_distance:            0.3
+    minimum_travel_heading:             0.3
+
+    # Scan matching (GT pose → scan matching weight can be low)
+    use_scan_matching:                  true
+    use_scan_barycenter:                true
+    scan_buffer_size:                   10
+    scan_buffer_maximum_scan_distance:  20.0
+    link_match_minimum_response_fine:   0.1
+    distance_variance_penalty:          0.3
+    angle_variance_penalty:             0.5
+
+    fine_search_angle_offset:           0.00349
+    coarse_search_angle_offset:         0.349
+    coarse_angle_resolution:            0.0349
+    minimum_angle_penalty:              0.9
+    minimum_distance_penalty:           0.5
+    use_response_expansion:             true
+
+    max_laser_range:   20.0
+    stack_size_to_use: 40000000
+    debug_logging:     false

@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<robot name="x1_lidar">
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0.12" rpy="0 0 0"/>
+      <geometry><box size="0.9874 0.5709 0.05"/></geometry>
+      <material name="chassis_dark"><color rgba="0.18 0.18 0.18 1.0"/></material>
+    </visual>
+  </link>
+
+  <!-- Front LiDAR (x1_robot.urdf 기준: xyz="0.5 0.0 0.2") -->
+  <link name="lidar_link">
+    <visual>
+      <geometry><cylinder radius="0.06" length="0.08"/></geometry>
+      <material name="lidar_red"><color rgba="0.90 0.10 0.10 1.0"/></material>
+    </visual>
+  </link>
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="lidar_link"/>
+    <origin xyz="0.5 0.0 0.2" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Rear LiDAR (x1_robot.urdf 기준: xyz="-0.5 0.0 0.2", yaw=π) -->
+  <link name="lidar_rear_link">
+    <visual>
+      <geometry><cylinder radius="0.06" length="0.08"/></geometry>
+      <material name="lidar_rear_orange"><color rgba="0.95 0.45 0.10 1.0"/></material>
+    </visual>
+  </link>
+  <joint name="lidar_rear_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="lidar_rear_link"/>
+    <origin xyz="-0.5 0.0 0.2" rpy="0 0 3.14159"/>
+  </joint>
+</robot>
