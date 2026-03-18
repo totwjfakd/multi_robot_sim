@@ -113,7 +113,7 @@ class GtPoseBridge(Node):
 
             # --- TF: robot_N/odom → robot_N/base_link ---
             nav_tf = TransformStamped()
-            nav_tf.header.stamp    = tf.header.stamp
+            nav_tf.header.stamp    = self.get_clock().now().to_msg()
             nav_tf.header.frame_id = f'{child}/odom'
             nav_tf.child_frame_id  = f'{child}/base_link'
             nav_tf.transform       = tf.transform
@@ -121,7 +121,7 @@ class GtPoseBridge(Node):
 
             # --- Odometry topic: /robot_N/odom ---
             odom = Odometry()
-            odom.header.stamp        = tf.header.stamp
+            odom.header.stamp        = nav_tf.header.stamp
             odom.header.frame_id     = f'{child}/odom'
             odom.child_frame_id      = f'{child}/base_link'
             odom.pose.pose.position.x    = tf.transform.translation.x
