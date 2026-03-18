@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<robot name="x1_nosensor">
+  <!-- Base link (main chassis) - no sensor links -->
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0.12" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.9874 0.5709 0.05"/>
+      </geometry>
+      <material name="chassis_dark">
+        <color rgba="0.18 0.18 0.18 1.0"/>
+      </material>
+    </visual>
+  </link>
+</robot>

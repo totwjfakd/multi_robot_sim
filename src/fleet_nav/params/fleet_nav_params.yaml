@@ -1,0 +1,87 @@
+# ===========================================================
+# fleet_nav_params.yaml
+# 최소 Nav2 파라미터:
+#   - Controller Server (RPP)
+#   - Local Costmap (플러그인 없는 빈 costmap — controller_server 필수 요구)
+#
+# 제거됨:
+#   - global_costmap  (planner_server 없으므로 불필요)
+#   - bt_navigator, planner_server, behavior_server,
+#     smoother_server, velocity_smoother
+#
+# <NS> 플레이스홀더는 런치 시 robot_N으로 치환됨.
+# ===========================================================
+
+# =======================
+# Controller Server (RPP)
+# =======================
+controller_server:
+  ros__parameters:
+    use_sim_time: True
+    controller_frequency: 10.0
+    min_x_velocity_threshold: 0.001
+    min_y_velocity_threshold: 0.0
+    min_theta_velocity_threshold: 0.001
+    failure_tolerance: 0.3
+    progress_checker_plugin: "progress_checker"
+    goal_checker_plugins: ["general_goal_checker"]
+    controller_plugins: ["FollowPath"]
+
+    progress_checker:
+      plugin: "nav2_controller::SimpleProgressChecker"
+      required_movement_radius: 0.5
+      movement_time_allowance: 15.0
+
+    general_goal_checker:
+      plugin: "nav2_controller::SimpleGoalChecker"
+      stateful: True
+      xy_goal_tolerance: 0.3
+      yaw_goal_tolerance: 0.5
+
+    # Regulated Pure Pursuit Controller
+    FollowPath:
+      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+      desired_linear_vel: 0.5
+      lookahead_dist: 0.8
+      min_lookahead_dist: 0.3
+      max_lookahead_dist: 1.5
+      lookahead_time: 1.5
+      rotate_to_heading_angular_vel: 1.0
+      transform_tolerance: 0.2
+      use_velocity_scaled_lookahead_dist: true
+      min_approach_linear_velocity: 0.05
+      approach_velocity_scaling_dist: 1.0
+      use_collision_detection: false      # LiDAR 없음
+      use_regulated_linear_velocity_scaling: true
+      use_cost_regulated_linear_velocity_scaling: false
+      regulated_linear_scaling_min_radius: 0.9
+      regulated_linear_scaling_min_speed: 0.25
+      use_rotate_to_heading: true
+      allow_reversing: false
+      rotate_to_heading_min_angle: 0.785  # 45 deg
+      max_angular_accel: 3.2
+      max_robot_pose_search_dist: 10.0
+
+# =======================
+# Local Costmap (빈 costmap — 연산 없음)
+# controller_server가 내부적으로 요구하므로 제거 불가.
+# 플러그인을 비워서 실질적 연산을 제거함.
+# =======================
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      use_sim_time: True
+      update_frequency: 1.0       # 최저 주기
+      publish_frequency: 0.5
+      global_frame: "<NS>/odom"
+      robot_base_frame: "<NS>/base_link"
+      rolling_window: true
+      width: 2                    # 최소 크기
+      height: 2
+      resolution: 0.1
+      plugins: []                 # 레이어 없음 → 연산 없음
+      always_send_full_costmap: False
+
+robot_state_publisher:
+  ros__parameters:
+    use_sim_time: True
