@@ -36,7 +36,7 @@ def _make_spawn_positions(num_robots: int):
         col = i % cols
         x   = -2.0 + col * 1.5
         y   = -2.0 + row * 1.5
-        positions.append((x, y, 0.02, 0.0))
+        positions.append((x, y, 0.1, 0.0))
     return positions
 
 

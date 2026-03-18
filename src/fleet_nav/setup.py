@@ -25,6 +25,8 @@ setup(
             glob('params/*')),
         (os.path.join('share', package_name, 'urdf'),
             glob('urdf/*')),
+        (os.path.join('share', package_name, 'rviz'),
+            glob('rviz/*')),
         *[
             (os.path.join('share', package_name, os.path.dirname(f)),
              [f])

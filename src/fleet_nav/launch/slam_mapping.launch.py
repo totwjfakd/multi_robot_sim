@@ -32,7 +32,7 @@ def generate_launch_description():
     sdf_file    = os.path.join(pkg_fleet, 'models', 'X1_Lidar', 'model.sdf')
     urdf_file   = os.path.join(pkg_fleet, 'urdf',   'x1_lidar.urdf')
     params_file = os.path.join(pkg_fleet, 'params', 'slam_params.yaml')
-    rviz_file   = os.path.join(os.path.expanduser('~'), 'Fleet_sim', 'slam.rviz')
+    rviz_file   = os.path.join(pkg_fleet, 'rviz', 'slam.rviz')
 
     fleet_models = os.path.join(pkg_fleet, 'models')
     gz_models    = os.path.join(pkg_gz,    'models')
