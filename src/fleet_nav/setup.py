@@ -45,6 +45,7 @@ setup(
             'gt_pose_bridge = fleet_nav.gt_pose_bridge:main',
             'fleet_commander = fleet_nav.fleet_commander:main',
             'multi_robot_controller = fleet_nav.multi_robot_controller:main',
+            'fleet_command_gui = fleet_nav.fleet_command_gui:main',
             'show_origins = fleet_nav.show_origins:main',
         ],
     },

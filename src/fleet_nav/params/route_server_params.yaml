@@ -1,0 +1,67 @@
+# fleet_nav/params/route_server_params.yaml
+#
+# nav2_route RouteServer 파라미터
+# graph_filepath는 launch 파일에서 런치 인자로 오버라이드됨
+
+route_server:
+  ros__parameters:
+    use_sim_time: true
+
+    # ── 그래프 ────────────────────────────────────────────────────────────────
+    graph_filepath: ""                     # launch 인자(graph_file)로 오버라이드
+    graph_file_loader: GeoJsonGraphFileLoader
+    GeoJsonGraphFileLoader:
+      plugin: nav2_route::GeoJsonGraphFileLoader
+
+    # ── 프레임 ────────────────────────────────────────────────────────────────
+    global_frame: map
+    route_frame:  map
+    base_frame:   base_link
+
+    # ── 경로 생성 ──────────────────────────────────────────────────────────────
+    path_density:   0.05                   # 경로 보간 밀도 (m)
+    smooth_corners: false
+    smoothing_radius: 1.0
+
+    # ── 플래너 ────────────────────────────────────────────────────────────────
+    max_planning_time:  2.0
+    max_iterations:     0                  # 0 = 제한 없음
+    enable_nn_search:   true
+    max_nn_search_iterations: 10000
+    num_nearest_nodes:  5
+
+    # ── 라우트 추적 ────────────────────────────────────────────────────────────
+    tracker_update_rate:       50.0
+    radius_to_achieve_node:    2.0         # 노드 도달 판정 반경 (m)
+    boundary_radius_to_achieve_node: 1.0
+    prune_goal:                true
+    min_prune_dist_from_start: 0.1
+    min_prune_dist_from_goal:  0.15
+    max_prune_dist_from_edge:  8.0
+    aggregate_blocked_ids:     false
+
+    # ── 엣지 비용 함수 플러그인 ───────────────────────────────────────────────
+    edge_cost_functions:
+      - DistanceScorer
+      - DynamicEdgesScorer
+
+    DistanceScorer:
+      plugin: nav2_route::DistanceScorer
+      weight: 1.0
+      speed_tag: speed_limit
+
+    DynamicEdgesScorer:
+      plugin: nav2_route::DynamicEdgesScorer
+
+    # ── 라우트 오퍼레이션 플러그인 ────────────────────────────────────────────
+    operations:
+      - AdjustSpeedLimit
+      - ReroutingService
+
+    AdjustSpeedLimit:
+      plugin: nav2_route::AdjustSpeedLimit
+      speed_limit_topic: speed_limit
+      speed_tag: speed_limit
+
+    ReroutingService:
+      plugin: nav2_route::ReroutingService

@@ -47,6 +47,8 @@ def generate_launch_description():
                               description='Launch fleet_commander to auto-assign routes'),
         DeclareLaunchArgument('dispatch_interval', default_value='2.0',
                               description='Seconds between goal dispatches per robot'),
+        DeclareLaunchArgument('gui', default_value='true',
+                              description='Launch Gazebo with GUI (false = headless)'),
         DeclareLaunchArgument('log_level', default_value='warn',
                               description='Log level (warn/error for large fleets)'),
         DeclareLaunchArgument('world_file', default_value=default_world_file,
@@ -65,6 +67,7 @@ def generate_launch_description():
             ),
             launch_arguments={
                 'num_robots': LaunchConfiguration('num_robots'),
+                'gui':        LaunchConfiguration('gui'),
                 'world_file': LaunchConfiguration('world_file'),
                 'world_name': LaunchConfiguration('world_name'),
                 'map_file':   LaunchConfiguration('map_file'),

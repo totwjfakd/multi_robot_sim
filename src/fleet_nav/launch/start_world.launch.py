@@ -32,12 +32,14 @@ def _launch_nodes(context, *args, **kwargs):
     pkg_fleet  = get_package_share_directory('fleet_nav')
     pkg_ros_gz = get_package_share_directory('ros_gz_sim')
 
-    world_file  = LaunchConfiguration('world_file').perform(context)
-    world_name  = LaunchConfiguration('world_name').perform(context)
-    map_file    = LaunchConfiguration('map_file').perform(context)
-    graph_file  = LaunchConfiguration('graph_file').perform(context)
-    num_robots  = LaunchConfiguration('num_robots').perform(context)
-    rviz_file   = os.path.join(pkg_fleet, 'rviz', 'fleet.rviz')
+    world_file        = LaunchConfiguration('world_file').perform(context)
+    world_name        = LaunchConfiguration('world_name').perform(context)
+    map_file          = LaunchConfiguration('map_file').perform(context)
+    graph_file        = LaunchConfiguration('graph_file').perform(context)
+    num_robots        = LaunchConfiguration('num_robots').perform(context)
+    gui               = LaunchConfiguration('gui').perform(context).lower() != 'false'
+    rviz_file         = os.path.join(pkg_fleet, 'rviz', 'fleet.rviz')
+    route_params_file = os.path.join(pkg_fleet, 'params', 'route_server_params.yaml')
 
     return [
         # ── Gazebo ────────────────────────────────────────────────────────────
@@ -45,7 +47,9 @@ def _launch_nodes(context, *args, **kwargs):
             PythonLaunchDescriptionSource(
                 os.path.join(pkg_ros_gz, 'launch', 'gz_sim.launch.py')
             ),
-            launch_arguments={'gz_args': f'-r -v 3 {world_file}'}.items(),
+            launch_arguments={
+                'gz_args': f'-r -v 3 {world_file}' if gui else f'-r -v 3 -s {world_file}'
+            }.items(),
         ),
 
         # ── Clock bridge ─────────────────────────────────────────────────────
@@ -107,11 +111,10 @@ def _launch_nodes(context, *args, **kwargs):
             executable='route_server',
             name='route_server',
             output='screen',
-            parameters=[{
-                'use_sim_time':   True,
-                'graph_filepath': graph_file,
-                'route_frame':    'map',
-            }],
+            parameters=[
+                route_params_file,
+                {'graph_filepath': graph_file},
+            ],
         ),
 
         # ── Lifecycle Manager ─────────────────────────────────────────────────
