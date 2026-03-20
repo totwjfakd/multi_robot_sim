@@ -12,10 +12,9 @@
 #   sudo apt install ros-humble-nav2-route
 #
 # Sequence:
-#   1. start_world  → Gazebo + shared servers (map, route, GT bridge)
-#   2. spawn_robots → N robots in Gazebo + per-robot Nav2 stacks
-#   3. multi_robot_controller → single node drives all robots
-#   4. fleet_commander → auto-assign routes to robots
+#   1. start_world          → Gazebo + shared servers (map, route, GT bridge)
+#   2. spawn_robots         → N robots in Gazebo + per-robot Nav2 stacks
+#   3. multi_robot_controller → cmd_vel 계산 + 외부 명령 수신 (/fleet_nav/command)
 
 import os
 from launch import LaunchDescription
@@ -43,10 +42,6 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('num_robots', default_value='10',
                               description='Number of robots to spawn'),
-        DeclareLaunchArgument('start_commander', default_value='true',
-                              description='Launch fleet_commander to auto-assign routes'),
-        DeclareLaunchArgument('dispatch_interval', default_value='2.0',
-                              description='Seconds between goal dispatches per robot'),
         DeclareLaunchArgument('gui', default_value='true',
                               description='Launch Gazebo with GUI (false = headless)'),
         DeclareLaunchArgument('log_level', default_value='warn',
@@ -107,28 +102,11 @@ def generate_launch_description():
                         'max_angular_vel':   1.5,
                         'goal_tolerance':    0.3,
                         'control_frequency': 10.0,
+                        'graph_file':        LaunchConfiguration('graph_file'),
                     }],
                     output='screen',
                 )
             ],
         ),
 
-        # ── 4. Fleet Commander ─────────────────────────────────────────────────
-        TimerAction(
-            period=12.0,
-            actions=[
-                Node(
-                    package='fleet_nav',
-                    executable='fleet_commander',
-                    name='fleet_commander',
-                    parameters=[{
-                        'num_robots':        LaunchConfiguration('num_robots'),
-                        'robot_prefix':      'robot_',
-                        'graph_file':        LaunchConfiguration('graph_file'),
-                        'dispatch_interval': LaunchConfiguration('dispatch_interval'),
-                    }],
-                    output='screen',
-                )
-            ],
-        ),
     ])
