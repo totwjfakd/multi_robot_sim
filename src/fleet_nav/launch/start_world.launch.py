@@ -110,31 +110,27 @@ def _launch_nodes(context, *args, **kwargs):
             }.items(),
         ),
 
-        # ── Clock bridge ─────────────────────────────────────────────────────
+        # ── 통합 Bridge (clock + world_pose + cmd_vel × N) ───────────────────
         Node(
             package='ros_gz_bridge',
             executable='parameter_bridge',
-            name='clock_bridge',
+            name='gz_bridge',
             arguments=[
-                f'/world/{world_name}/clock'
-                f'@rosgraph_msgs/msg/Clock'
-                f'@gz.msgs.Clock'
+                f'/world/{world_name}/clock@rosgraph_msgs/msg/Clock@gz.msgs.Clock',
+                f'/world/{world_name}/pose/info@tf2_msgs/msg/TFMessage@ignition.msgs.Pose_V',
+                *[
+                    f'/model/robot_{i + 1}/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist'
+                    for i in range(num_robots)
+                ],
             ],
-            remappings=[(f'/world/{world_name}/clock', '/clock')],
-            output='screen',
-        ),
-
-        # ── World pose bridge ─────────────────────────────────────────────────
-        Node(
-            package='ros_gz_bridge',
-            executable='parameter_bridge',
-            name='world_pose_bridge',
-            arguments=[
-                f'/world/{world_name}/pose/info'
-                f'@tf2_msgs/msg/TFMessage'
-                f'@ignition.msgs.Pose_V'
+            remappings=[
+                (f'/world/{world_name}/clock', '/clock'),
+                (f'/world/{world_name}/pose/info', '/world_poses'),
+                *[
+                    (f'/model/robot_{i + 1}/cmd_vel', f'/robot_{i + 1}/cmd_vel')
+                    for i in range(num_robots)
+                ],
             ],
-            remappings=[(f'/world/{world_name}/pose/info', '/world_poses')],
             output='screen',
         ),
 

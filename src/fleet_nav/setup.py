@@ -44,6 +44,7 @@ setup(
         'console_scripts': [
             'gt_pose_bridge = fleet_nav.gt_pose_bridge:main',
             'multi_robot_controller = fleet_nav.multi_robot_controller:main',
+            'fleet_command_gui = fleet_nav.fleet_command_gui:main',
         ],
     },
 )

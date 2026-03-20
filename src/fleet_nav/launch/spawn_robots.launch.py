@@ -1,13 +1,10 @@
 # fleet_nav/launch/spawn_robots.launch.py
 #
-# N대 로봇 스폰 (로봇당 3개 노드):
+# N대 로봇 스폰 (로봇당 2개 노드):
 #   - gz_spawner           (Gazebo SDF 스폰)
-#   - cmd_vel bridge       (ROS → Gazebo DiffDrive)
 #   - robot_state_publisher
 #
-# 제거됨:
-#   - controller_server  )  → multi_robot_controller 단일 노드로 통합
-#   - lifecycle_manager  )     (fleet_bringup.launch.py에서 실행)
+# cmd_vel bridge는 start_world.launch.py의 통합 bridge에서 처리
 
 import os
 import math
@@ -71,21 +68,7 @@ def _robot_nodes(context, *args, **kwargs):
                 output='screen',
             ),
 
-            # 2. cmd_vel 브릿지 (ROS → Gazebo DiffDrive)
-            Node(
-                package='ros_gz_bridge',
-                executable='parameter_bridge',
-                name=f'{name}_bridge_cmd',
-                arguments=[
-                    f'/model/{name}/cmd_vel'
-                    f'@geometry_msgs/msg/Twist'
-                    f'@gz.msgs.Twist'
-                ],
-                remappings=[(f'/model/{name}/cmd_vel', 'cmd_vel')],
-                output='screen',
-            ),
-
-            # 3. Robot State Publisher
+            # 2. Robot State Publisher
             Node(
                 package='robot_state_publisher',
                 executable='robot_state_publisher',
