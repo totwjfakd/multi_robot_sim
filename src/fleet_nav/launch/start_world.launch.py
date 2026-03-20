@@ -16,6 +16,8 @@
 #   graph_file  : path to nav_graph GeoJSON
 
 import os
+import tempfile
+import yaml
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument, SetEnvironmentVariable,
@@ -27,6 +29,60 @@ from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 
 
+def _robot_model_display(name: str) -> dict:
+    return {
+        'Alpha': 1,
+        'Class': 'rviz_default_plugins/RobotModel',
+        'Collision Enabled': False,
+        'Description File': '',
+        'Description Source': 'Topic',
+        'Description Topic': {
+            'Depth': 5,
+            'Durability Policy': 'Volatile',
+            'History Policy': 'Keep Last',
+            'Reliability Policy': 'Reliable',
+            'Value': f'/{name}/robot_description',
+        },
+        'Enabled': True,
+        'Links': {
+            'All Links Enabled': True,
+            'Expand Joint Details': False,
+            'Expand Link Details': False,
+            'Expand Tree': False,
+            'Link Tree Style': 'Links in Alphabetic Order',
+        },
+        'Name': name,
+        'TF Prefix': name,
+        'Update Interval': 0,
+        'Value': True,
+        'Visual Enabled': True,
+    }
+
+
+def _make_rviz_config(base_rviz_file: str, num_robots: int) -> str:
+    """base fleet.rviz에 RobotModel 디스플레이를 num_robots 만큼 추가한 임시 파일 생성."""
+    with open(base_rviz_file) as f:
+        config = yaml.safe_load(f)
+
+    robot_models = [_robot_model_display(f'robot_{i + 1}') for i in range(num_robots)]
+
+    displays = config['Visualization Manager']['Displays']
+    # Path 디스플레이 앞에 삽입 (Map 다음)
+    insert_idx = next(
+        (i for i, d in enumerate(displays) if d.get('Class') == 'rviz_default_plugins/Path'),
+        len(displays),
+    )
+    for j, model in enumerate(robot_models):
+        displays.insert(insert_idx + j, model)
+
+    tmp = tempfile.NamedTemporaryFile(
+        mode='w', suffix='.rviz', prefix='fleet_', delete=False
+    )
+    yaml.dump(config, tmp, default_flow_style=False, allow_unicode=True)
+    tmp.close()
+    return tmp.name
+
+
 def _launch_nodes(context, *args, **kwargs):
     """Resolve launch arguments and return nodes."""
     pkg_fleet  = get_package_share_directory('fleet_nav')
@@ -36,10 +92,12 @@ def _launch_nodes(context, *args, **kwargs):
     world_name        = LaunchConfiguration('world_name').perform(context)
     map_file          = LaunchConfiguration('map_file').perform(context)
     graph_file        = LaunchConfiguration('graph_file').perform(context)
-    num_robots        = LaunchConfiguration('num_robots').perform(context)
+    num_robots        = int(LaunchConfiguration('num_robots').perform(context))
     gui               = LaunchConfiguration('gui').perform(context).lower() != 'false'
-    rviz_file         = os.path.join(pkg_fleet, 'rviz', 'fleet.rviz')
+    base_rviz_file    = os.path.join(pkg_fleet, 'rviz', 'fleet.rviz')
     route_params_file = os.path.join(pkg_fleet, 'params', 'route_server_params.yaml')
+
+    rviz_file = _make_rviz_config(base_rviz_file, num_robots)
 
     return [
         # ── Gazebo ────────────────────────────────────────────────────────────
@@ -86,7 +144,7 @@ def _launch_nodes(context, *args, **kwargs):
             executable='gt_pose_bridge',
             name='gt_pose_bridge',
             parameters=[{
-                'num_robots':   int(num_robots),
+                'num_robots':   num_robots,
                 'robot_prefix': 'robot_',
                 'world_frame':  'map',
             }],
